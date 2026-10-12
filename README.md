@@ -2,7 +2,7 @@
 
 # 🚀 Scalable REST API (Node.js, Prisma, Neon & Redis)
 
-A production-ready backend service featuring secure OAuth 2.0 authentication, caching layers, and fully containerized environments for stable deployments.
+A backend service featuring secure OAuth 2.0 authentication, caching layers, and fully containerized environments for stable deployments.
 
 ## 🛠️ Tech Stack & Architecture
 

@@ -43,7 +43,7 @@ export const toggleProductFeature = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   const updatedProduct = await productService.updateProduct(req.params.productId, req.body)
-  sendSuccess({ res, statusCode: 200, data: updateProduct })
+  sendSuccess({ res, statusCode: 200, data: updatedProduct })
 }
 
 export const deleteProduct = async (req, res) => {

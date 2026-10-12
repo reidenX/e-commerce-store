@@ -76,11 +76,6 @@ DATABASE_URL=postgres://root:secretpassword@localhost:5432/perndb
 DIRECT_URL=postgres://root:secretpassword@localhost:5432/perndb
 REDIS_URL=redis://localhost:6379
 
-# Database (Neon Cloud) & Upstash(Redis)
-DATABASE_URL_PROD="postgresql://user:password@ep-your-neon-url.tech/neondb?sslmode=require"
-DIRECT_URL_PROD="postgresql://user:password@ep-your-neon-url.tech/neondb?sslmode=require"
-REDIS_URL_PROD=rediss://default:gQAAAAAAAR6nAAIgcDJiODcyZDM3ZDI4NzQ0NDEyYWJmNzc1N2RkODdhNDgxZQ@magical-arachnid-73383.upstash.io:6379
-
 # Stripe (Use Test Mode Keys Only)
 STRIPE_SECRET_KEY="sk_test_your_secret_key"
 STRIPE_WEBHOOK_SECRET="whsec_your_webhook_secret"

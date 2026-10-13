@@ -12,7 +12,7 @@ export const fetchAllProducts = async () => {
   const allProducts = await productDB.findMany()
   if (allProducts.length === 0) throw new AppError('No products found', 404)
 
-  await safeAwait(productCache.cacheAllProducts(allProducts))
+  await safeAwait(productCache.cacheAllProducts(allProducts), 'failed to cache products')
 
   return allProducts
 }
@@ -24,7 +24,7 @@ export const fetchFeaturedProducts = async () => {
   const featuredProducts = await productDB.findAllFeatured()
   if (featuredProducts.length === 0) throw new AppError('No featured products found', 404)
 
-  await safeAwait(productCache.cacheFeatured(featuredProducts))
+  await safeAwait(productCache.cacheFeatured(featuredProducts), 'failed to cache featured products')
 
   return featuredProducts
 }
@@ -36,7 +36,10 @@ export const fetchByCategory = async (category) => {
   const byCategory = await productDB.findByCategory(category)
   if (!byCategory) throw new AppError('No category found', 404)
 
-  await safeAwait(productCache.cacheByCategory(category, byCategory))
+  await safeAwait(
+    productCache.cacheByCategory(category, byCategory),
+    'failed to cache products by category',
+  )
 
   return byCategory
 }
@@ -50,7 +53,10 @@ export const fetchRecommendedProducts = async (currentProductId) => {
 
   const recommendations = await getRecommendations(currentProduct.id, currentProduct.category)
 
-  await safeAwait(productCache.cacheRecommended(currentProductId, recommendations))
+  await safeAwait(
+    productCache.cacheRecommended(currentProductId, recommendations),
+    'failed to cache recommended products',
+  )
 
   return recommendations
 }
@@ -62,7 +68,7 @@ export const fetchProduct = async (productId) => {
   const product = await productDB.findById(productId)
   if (!product) throw new AppError('No product found', 404)
 
-  await safeAwait(productCache.cacheProduct(productId, product))
+  await safeAwait(productCache.cacheProduct(productId, product), 'failed to cache a product')
 
   return product
 }
@@ -101,7 +107,10 @@ export const updateProductFeature = async (productId) => {
 
   const updatedProduct = await productDB.updateProductFeature(productId, product.isFeatured)
 
-  await productCache.clearAllCached(updatedProduct.category, productId)
+  await safeAwait(
+    productCache.clearAllCached(updatedProduct.category, productId),
+    'failed to clear cached products',
+  )
 
   return updatedProduct
 }
@@ -110,7 +119,10 @@ export const updateProduct = async (productId, newData) => {
   const updatedProduct = await productDB.updateProductData(productId, newData)
   if (!updatedProduct) throw new AppError('No product found', 404)
 
-  await productCache.clearAllCached(updatedProduct.category)
+  await safeAwait(
+    productCache.clearAllCached(updatedProduct.category),
+    'failed to clear cached products',
+  )
 
   return updatedProduct
 }
@@ -120,7 +132,10 @@ export const deleteProduct = async (productId) => {
   if (!deletedProduct) throw new AppError('No product found', 404)
   if (deletedProduct.imageId) await cloudinaryService.deleteImage(deletedProduct.imageId)
 
-  await productCache.clearAllCached(deletedProduct.category, productId)
+  await safeAwait(
+    productCache.clearAllCached(deletedProduct.category, productId),
+    'failed to clear cached products',
+  )
 
   return true
 }

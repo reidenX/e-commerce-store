@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 const NavRightSection = () => {
   const cartItemsCount = 2
@@ -22,7 +23,9 @@ const NavRightSection = () => {
           Dashboard
         </Button>
       ) : (
-        <Button size="sm">Sign In</Button>
+        <Button size="sm">
+          <Link href={'/login'}>Sign In</Link>
+        </Button>
       )}
     </div>
   )

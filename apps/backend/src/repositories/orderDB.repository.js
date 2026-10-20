@@ -73,19 +73,22 @@ export const orderDB = {
   },
   fulfillPaidOrder(orderId, userId) {
     return prisma.$transaction(async (tx) => {
-      const existingOrder = await tx.order.findUnique({
+      const updatedOrder = await tx.order.updateMany({
+        where: { id: orderId, status: { not: 'paid' } },
+        data: { status: 'paid' },
+      })
+
+      if (updatedOrder.count === 0) {
+        console.log('⚠️ Order already fulfilled. Skipping safely.')
+        return false
+      }
+
+      const order = await tx.order.findUniqueOrThrow({
         where: { id: orderId },
         include: { orderItems: true },
       })
 
-      if (existingOrder && existingOrder.status === 'paid') return false
-
-      await tx.order.update({
-        where: { id: orderId },
-        data: { status: 'paid' },
-      })
-
-      for (const item of existingOrder.orderItems) {
+      for (const item of order.orderItems) {
         await tx.product.update({
           where: { id: item.productId },
           data: { stock: { decrement: item.quantity } },
@@ -103,20 +106,23 @@ export const orderDB = {
     })
   },
   updateStatus(orderId, userId, status) {
+    const statuses = ['paid', 'failed', 'cancelled']
+
     return prisma.$transaction(async (tx) => {
-      const existingOrder = await tx.order.findUnique({
-        where: { id: orderId },
-        include: { orderItems: true },
-      })
-
-      if (existingOrder && existingOrder.status === 'paid') {
-        throw new AppError(`❌ Order with id of ${orderId} is already paid`)
-      }
-
-      await tx.order.update({
-        where: { id: orderId },
+      const updatedOrder = tx.order.updateMany({
+        where: { id: orderId, status: { notIn: statuses } },
         data: { status },
       })
+
+      if (updatedOrder.count === 0) {
+        const orderStatusCheck = await tx.findUnique({ where: { id: orderId } })
+
+        if (orderStatusCheck && statuses.includes(orderStatusCheck.status)) {
+          throw new AppError(`❌ Order with id of ${orderId} is already ${orderStatusCheck.status}`)
+        }
+
+        throw new AppError(`❌ Order with id of ${orderId} not found`)
+      }
 
       await tx.cartItem.deleteMany({
         where: { userId },

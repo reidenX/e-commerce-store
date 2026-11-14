@@ -9,4 +9,7 @@ export default defineConfig([
     extends: ['js/recommended'],
     languageOptions: { globals: { ...globals.node, ...globals.jest } },
   },
+  {
+    ignores: ['src/generated/**'],
+  },
 ])

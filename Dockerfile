@@ -60,7 +60,7 @@ WORKDIR /app
 COPY . .
 
 # Production workspace assembly
-RUN pnpm --filter backend deploy --prod /prod/backend
+RUN pnpm --filter backend --legacy deploy --prod /prod/backend
 RUN pnpm --filter backend exec prisma generate --schema=/prod/backend/prisma/schema.prisma
 
 # ==================================================

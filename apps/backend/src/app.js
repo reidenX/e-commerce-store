@@ -19,7 +19,7 @@ app.use(passport.initialize())
 app.post(
   '/api/checkout/stripe-webhook',
   express.json({
-    verify: (req, res, buf, encoding) => {
+    verify: (req, res, buf) => {
       if (buf && buf.length) {
         req.rawBody = buf
       }

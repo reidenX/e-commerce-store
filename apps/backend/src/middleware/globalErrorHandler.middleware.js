@@ -1,5 +1,5 @@
 import { clearSessionCookie } from '../utils/cookieHelper.js'
-
+// eslint-disable-next-line no-unused-vars
 export const globalErrorHandler = (err, req, res, next) => {
   console.error(`ERROR 💥:`, err.stack)
 

@@ -72,7 +72,7 @@ describe('deleteImage', () => {
     )
 
     await expect(deleteImage('public-id-123')).rejects.toThrow(
-      new AppError('Failed to delete image from cloudinary', 500),
+      new AppError('Error: Failed to delete image from cloudinary', 500),
     )
 
     expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('public-id-123')

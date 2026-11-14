@@ -151,6 +151,8 @@ describe('updateItemQuantity', () => {
 
     const result = await cartService.updateItemQuantity(mockUserId, mockProductId, 0, mockUpdatedAt)
 
+    expect(result).toEqual(mockCartItems)
+
     expect(cartDB.deleteSingleCartItem).toHaveBeenCalledWith(mockUserId, mockProductId)
     expect(cartDB.findCartItems).toHaveBeenCalledWith(mockUserId)
     expect(cartCache.deleteCartItems).toHaveBeenCalledWith(mockUserId)

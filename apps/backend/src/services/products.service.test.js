@@ -385,12 +385,9 @@ describe('updateProduct', () => {
     productDB.updateProductData.mockResolvedValue(mockNewProductData)
     productCache.clearAllCached.mockResolvedValue(1)
 
-    const result = await productService.updateProduct(mockNewProductData.id, mockNewProductData)
+    const result = await productService.updateProduct(mockProduct.id, mockNewProductData)
 
-    expect(productDB.updateProductData).toHaveBeenCalledWith(
-      mockNewProductData.id,
-      mockNewProductData,
-    )
+    expect(productDB.updateProductData).toHaveBeenCalledWith(mockProduct.id, mockNewProductData)
     expect(result).toEqual(mockNewProductData)
     expect(productCache.clearAllCached).toHaveBeenCalled()
   })

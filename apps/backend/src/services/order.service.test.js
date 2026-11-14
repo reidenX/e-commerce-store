@@ -131,8 +131,6 @@ describe('handleWebhookEvent', () => {
     secret: endpointSecret,
   })
 
-  const mockTotalAmount = mockNewOrder.totalAmount / 100
-
   test('should successfully update the database and return an custom success message', async () => {
     mockPayload.type = 'checkout.session.completed'
     orderDB.constructWebHookEvent.mockReturnValue(mockPayload)

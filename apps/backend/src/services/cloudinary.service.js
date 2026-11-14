@@ -35,6 +35,6 @@ export const deleteImage = async (publicId) => {
     const result = await cloudinary.uploader.destroy(publicId)
     return result
   } catch (error) {
-    throw new AppError('Failed to delete image from cloudinary', 500)
+    throw new AppError(`${error}`, 500)
   }
 }

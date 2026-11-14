@@ -7,5 +7,6 @@
     "dev:backend:test": "pnpm --filter backend test",
     "dev:backend:lint": "pnpm --filter backend lint",
     "dev": "pnpm --parallel dev"
-  }
+  },
+  "packageManager": "pnpm@10.11.0"
 }

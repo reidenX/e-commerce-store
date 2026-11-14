@@ -4,7 +4,7 @@
   "scripts": {
     "dev:backend": "pnpm --filter backend dev",
     "dev:frontend": "pnpm --filter frontend dev",
-    "dev:backend:test": "pnpm --filter backend test",
+    "dev:backend:test": "pnpm --filter backend test:watch",
     "dev:backend:lint": "pnpm --filter backend lint",
     "dev": "pnpm --parallel dev"
   },

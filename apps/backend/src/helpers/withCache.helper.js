@@ -33,12 +33,12 @@ import { safeAwait } from './await.helper'
  *   })
  */
 
-export const withCache = async ({ read, load, write, notFound }) => {
+export const withCache = async ({ read, load, write, notFound, allowEmpty = false }) => {
   const hit = await safeAwait(read())
   if (hit) return JSON.parse(hit)
 
   const data = await load()
-  if (!data || (Array.isArray(data) && data.length === 0)) {
+  if (!data || (!allowEmpty && Array.isArray(data) && data.length === 0)) {
     throw new AppError(notFound, 404)
   }
 

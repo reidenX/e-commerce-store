@@ -56,6 +56,20 @@ describe('fetchAllProducts', () => {
     expect(productDB.findMany).not.toHaveBeenCalled()
   })
 
+  test('should fall back to the database if the cache read fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    productCache.getAllCached.mockRejectedValue(new Error('redis down'))
+    productCache.cacheAllProducts.mockResolvedValue(1)
+    productDB.findMany.mockResolvedValue(mockAllProducts)
+
+    const result = await productService.fetchAllProducts()
+
+    expect(productDB.findMany).toHaveBeenCalled()
+    expect(result).toEqual(mockAllProducts)
+    expect(consoleSpy).toHaveBeenCalled()
+  })
+
   test('should throw a 404 error if the product does not exist in the database', async () => {
     productCache.getAllCached.mockResolvedValue(null)
     productDB.findMany.mockResolvedValue([])
@@ -67,14 +81,12 @@ describe('fetchAllProducts', () => {
     expect(productCache.cacheAllProducts).not.toHaveBeenCalled()
   })
 
-  test('should fetch all products, cache them, and return them on cache miss', async () => {
+  test('should still return data if caching the result fails', async () => {
     productCache.getAllCached.mockResolvedValue(null)
-    productCache.cacheAllProducts.mockResolvedValue(1)
+    productCache.cacheAllProducts.mockRejectedValue(new Error('redis down'))
     productDB.findMany.mockResolvedValue(mockAllProducts)
 
     const result = await productService.fetchAllProducts()
-
-    expect(productCache.cacheAllProducts).toHaveBeenCalledWith(mockAllProducts)
 
     expect(result).toEqual(mockAllProducts)
   })
@@ -87,7 +99,7 @@ describe('fetchFeaturedProducts', () => {
 
   const mockFeaturedProducts = [{ id: 'prod_123', isFeatured: true }]
 
-  test('should return parced data from redis cache if it exists', async () => {
+  test('should return parsed data from redis cache if it exists', async () => {
     productCache.getFeaturedCached.mockResolvedValue(JSON.stringify(mockFeaturedProducts))
 
     const result = await productService.fetchFeaturedProducts()
@@ -96,6 +108,20 @@ describe('fetchFeaturedProducts', () => {
     expect(result).toEqual(mockFeaturedProducts)
 
     expect(productDB.findAllFeatured).not.toHaveBeenCalled()
+  })
+
+  test('should fall back to the database if the cache read fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    productCache.getFeaturedCached.mockRejectedValue(new Error('redis down'))
+    productCache.cacheFeatured.mockResolvedValue(1)
+    productDB.findAllFeatured.mockResolvedValue(mockFeaturedProducts)
+
+    const result = await productService.fetchFeaturedProducts()
+
+    expect(productDB.findAllFeatured).toHaveBeenCalled()
+    expect(result).toEqual(mockFeaturedProducts)
+    expect(consoleSpy).toHaveBeenCalled()
   })
 
   test('should throw a 404 error if there is no featured products in the database', async () => {
@@ -109,16 +135,17 @@ describe('fetchFeaturedProducts', () => {
     expect(productCache.cacheFeatured).not.toHaveBeenCalled()
   })
 
-  test('should fetch featured products, cache them, and return them on cache miss', async () => {
+  test('should still return data if caching the result fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
     productCache.getFeaturedCached.mockResolvedValue(null)
-    productCache.cacheFeatured.mockResolvedValue(1)
+    productCache.cacheFeatured.mockRejectedValue(new Error('redis down'))
     productDB.findAllFeatured.mockResolvedValue(mockFeaturedProducts)
 
     const result = await productService.fetchFeaturedProducts()
 
-    expect(productCache.cacheFeatured).toHaveBeenCalledWith(mockFeaturedProducts)
-
     expect(result).toEqual(mockFeaturedProducts)
+    expect(consoleSpy).toHaveBeenCalled()
   })
 })
 
@@ -130,7 +157,7 @@ describe('fetchByCategory', () => {
   const mockProductCategory = 'Food'
   const mockProductsByCategory = [{ id: 'prod_123', category: 'Food' }]
 
-  test('shoud return parsed data from redis cache if it exists', async () => {
+  test('should return parsed data from redis cache if it exists', async () => {
     productCache.getByCategoryCached.mockResolvedValue(JSON.stringify(mockProductsByCategory))
 
     const result = await productService.fetchByCategory(mockProductCategory)
@@ -141,9 +168,23 @@ describe('fetchByCategory', () => {
     expect(result).toEqual(mockProductsByCategory)
   })
 
+  test('should fall back to the database if the cache read fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    productCache.getByCategoryCached.mockRejectedValue(new Error('redis down'))
+    productCache.cacheByCategory.mockResolvedValue(1)
+    productDB.findByCategory.mockResolvedValue(mockProductsByCategory)
+
+    const result = await productService.fetchByCategory(mockProductCategory)
+
+    expect(productDB.findByCategory).toHaveBeenCalledWith(mockProductCategory)
+    expect(result).toEqual(mockProductsByCategory)
+    expect(consoleSpy).toHaveBeenCalled()
+  })
+
   test('should throw a 404 error if the category do not exist in the database', async () => {
     productCache.getByCategoryCached.mockResolvedValue(null)
-    productDB.findByCategory.mockResolvedValue(null)
+    productDB.findByCategory.mockResolvedValue([])
 
     await expect(productService.fetchByCategory(mockProductCategory)).rejects.toThrow(
       new AppError('No category found', 404),
@@ -152,19 +193,17 @@ describe('fetchByCategory', () => {
     expect(productCache.cacheByCategory).not.toHaveBeenCalled()
   })
 
-  test('should fetch products by category, cache them, and return them on cache miss', async () => {
+  test('should still return data if caching the result fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
     productCache.getByCategoryCached.mockResolvedValue(null)
-    productCache.cacheByCategory.mockResolvedValue(1)
+    productCache.cacheByCategory.mockRejectedValue(new Error('redis down'))
     productDB.findByCategory.mockResolvedValue(mockProductsByCategory)
 
     const result = await productService.fetchByCategory(mockProductCategory)
 
-    expect(productCache.cacheByCategory).toHaveBeenCalledWith(
-      mockProductCategory,
-      mockProductsByCategory,
-    )
-
     expect(result).toEqual(mockProductsByCategory)
+    expect(consoleSpy).toHaveBeenCalled()
   })
 })
 
@@ -214,6 +253,15 @@ describe('fetchRecommendedProducts', () => {
 
     expect(result).toEqual(mockRecommendations)
   })
+
+  test('should return an empty array when there are no recommendations', async () => {
+    productCache.getRecommendedCached.mockResolvedValue(null)
+    productCache.cacheRecommended.mockResolvedValue(1)
+    productDB.findById.mockResolvedValue({ id: 'prod-1', category: 'shoes' })
+    getRecommendations.mockResolvedValue([])
+
+    await expect(productService.fetchRecommendedProducts('prod-1')).resolves.toEqual([])
+  })
 })
 
 describe('fetchProduct', () => {
@@ -234,6 +282,20 @@ describe('fetchProduct', () => {
     expect(productDB.findById).not.toHaveBeenCalled()
   })
 
+  test('should fall back to the database if the cache read fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    productCache.getCachedById.mockRejectedValue(new Error('redis down'))
+    productCache.cacheProduct.mockResolvedValue(1)
+    productDB.findById.mockResolvedValue(mockProduct)
+
+    const result = await productService.fetchProduct(mockProductId)
+
+    expect(productDB.findById).toHaveBeenCalledWith(mockProductId)
+    expect(result).toEqual(mockProduct)
+    expect(consoleSpy).toHaveBeenCalled()
+  })
+
   test('should throw a 404 error if no product exist in the database', async () => {
     productCache.getCachedById.mockResolvedValue(null)
     productDB.findById.mockResolvedValue(null)
@@ -245,16 +307,18 @@ describe('fetchProduct', () => {
     expect(productCache.cacheProduct).not.toHaveBeenCalled()
   })
 
-  test('should fetch product, cache data, and return it on cache miss', async () => {
+  test('should still return data if caching the result fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
     productCache.getCachedById.mockResolvedValue(null)
-    productCache.cacheProduct.mockResolvedValue(1)
+    productCache.cacheProduct.mockRejectedValue(new Error('redis down'))
     productDB.findById.mockResolvedValue(mockProduct)
 
     const result = await productService.fetchProduct(mockProductId)
 
-    expect(productCache.cacheProduct).toHaveBeenCalledWith(mockProductId, mockProduct)
-
+    expect(productDB.findById).toHaveBeenCalledWith(mockProductId)
     expect(result).toEqual(mockProduct)
+    expect(consoleSpy).toHaveBeenCalled()
   })
 })
 

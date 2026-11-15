@@ -4,74 +4,53 @@ import { getRecommendations } from '../pipelines/products.pipeline.js'
 import { productDB } from '../repositories/productDB.repository.js'
 import { productCache } from '../repositories/productCache.repository.js'
 import { safeAwait } from '../helpers/await.helper.js'
+import { withCache } from '../helpers/withCache.helper.js'
 
-export const fetchAllProducts = async () => {
-  const cached = await safeAwait(productCache.getAllCached())
-  if (cached) return JSON.parse(cached)
+export const fetchAllProducts = () =>
+  withCache({
+    read: () => productCache.getAllCached(),
+    load: () => productDB.findMany(),
+    write: (allProducts) => productCache.cacheAllProducts(allProducts),
+    notFound: 'No products found',
+  })
 
-  const allProducts = await productDB.findMany()
-  if (allProducts.length === 0) throw new AppError('No products found', 404)
+export const fetchFeaturedProducts = () =>
+  withCache({
+    read: () => productCache.getFeaturedCached(),
+    load: () => productDB.findAllFeatured(),
+    write: (featuredProducts) => productCache.cacheFeatured(featuredProducts),
+    notFound: 'No featured products found',
+  })
 
-  await safeAwait(productCache.cacheAllProducts(allProducts), 'failed to cache products')
+export const fetchByCategory = (category) =>
+  withCache({
+    read: () => productCache.getByCategoryCached(category),
+    load: () => productDB.findByCategory(category),
+    write: (byCategory) => productCache.cacheByCategory(category, byCategory),
+    notFound: 'No category found',
+  })
 
-  return allProducts
-}
+export const fetchRecommendedProducts = (currentProductId) =>
+  withCache({
+    read: () => productCache.getRecommendedCached(currentProductId),
+    load: async () => {
+      const currentProduct = await productDB.findById(currentProductId)
+      if (!currentProduct) throw new AppError('No product found', 404)
 
-export const fetchFeaturedProducts = async () => {
-  const cached = await safeAwait(productCache.getFeaturedCached())
-  if (cached) return JSON.parse(cached)
+      return getRecommendations(currentProduct.id, currentProduct.category)
+    },
+    write: (recommendations) => productCache.cacheRecommended(currentProductId, recommendations),
+    notFound: 'No recommendations found',
+    allowEmpty: true,
+  })
 
-  const featuredProducts = await productDB.findAllFeatured()
-  if (featuredProducts.length === 0) throw new AppError('No featured products found', 404)
-
-  await safeAwait(productCache.cacheFeatured(featuredProducts), 'failed to cache featured products')
-
-  return featuredProducts
-}
-
-export const fetchByCategory = async (category) => {
-  const cached = await productCache.getByCategoryCached(category)
-  if (cached) return JSON.parse(cached)
-
-  const byCategory = await productDB.findByCategory(category)
-  if (!byCategory) throw new AppError('No category found', 404)
-
-  await safeAwait(
-    productCache.cacheByCategory(category, byCategory),
-    'failed to cache products by category',
-  )
-
-  return byCategory
-}
-
-export const fetchRecommendedProducts = async (currentProductId) => {
-  const cached = await productCache.getRecommendedCached(currentProductId)
-  if (cached) return JSON.parse(cached)
-
-  const currentProduct = await productDB.findById(currentProductId)
-  if (!currentProduct) throw new AppError('No product found', 404)
-
-  const recommendations = await getRecommendations(currentProduct.id, currentProduct.category)
-
-  await safeAwait(
-    productCache.cacheRecommended(currentProductId, recommendations),
-    'failed to cache recommended products',
-  )
-
-  return recommendations
-}
-
-export const fetchProduct = async (productId) => {
-  const cached = await productCache.getCachedById(productId)
-  if (cached) return JSON.parse(cached)
-
-  const product = await productDB.findById(productId)
-  if (!product) throw new AppError('No product found', 404)
-
-  await safeAwait(productCache.cacheProduct(productId, product), 'failed to cache a product')
-
-  return product
-}
+export const fetchProduct = (productId) =>
+  withCache({
+    read: () => productCache.getCachedById(productId),
+    load: () => productDB.findById(productId),
+    write: (product) => productCache.cacheProduct(productId, product),
+    notFound: 'No product found',
+  })
 
 export const postProduct = async (productData, fileBuffer) => {
   let cloudinaryResult

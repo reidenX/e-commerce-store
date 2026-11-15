@@ -11,11 +11,6 @@ export const getFeaturedProducts = async (req, res) => {
   sendSuccess({ res, statusCode: 200, data: featuredProducts })
 }
 
-export const setProductToFeatured = async (req, res) => {
-  const updatedProduct = await productService.updateProductFeature(req.params.productId)
-  sendSuccess({ res, statusCode: 200, data: updatedProduct })
-}
-
 export const getProductByCategory = async (req, res) => {
   const byCategory = await productService.fetchByCategory(req.params.category)
   sendSuccess({ res, statusCode: 200, data: byCategory })

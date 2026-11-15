@@ -1,5 +1,5 @@
-import AppError from '../errors/AppError'
-import { safeAwait } from './await.helper'
+import AppError from '../errors/AppError.js'
+import { safeAwait } from './await.helper.js'
 
 /**
  * Cache-aside helper: tries the cache first, falls back to the loader

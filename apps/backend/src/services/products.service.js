@@ -6,6 +6,9 @@ import { productCache } from '../repositories/productCache.repository.js'
 import { safeAwait } from '../helpers/await.helper.js'
 import { withCache } from '../helpers/withCache.helper.js'
 
+const invalidateProduct = (category, productId) =>
+  safeAwait(productCache.clearAllCached(category, productId), 'failed to clear cached products')
+
 export const fetchAllProducts = () =>
   withCache({
     read: () => productCache.getAllCached(),
@@ -66,11 +69,7 @@ export const postProduct = async (productData, fileBuffer) => {
 
     const newProduct = await productDB.createProduct(finalData)
 
-    await safeAwait(
-      productCache.clearAllCached(newProduct.category),
-      'failed to clear all cached products',
-    )
-
+    await invalidateProduct(newProduct.category, newProduct.id)
     return newProduct
   } catch (error) {
     if (cloudinaryResult?.public_id) {
@@ -86,11 +85,7 @@ export const updateProductFeature = async (productId) => {
 
   const updatedProduct = await productDB.updateProductFeature(productId, product.isFeatured)
 
-  await safeAwait(
-    productCache.clearAllCached(updatedProduct.category, productId),
-    'failed to clear cached products',
-  )
-
+  await invalidateProduct(updatedProduct.category, productId)
   return updatedProduct
 }
 
@@ -98,23 +93,21 @@ export const updateProduct = async (productId, newData) => {
   const updatedProduct = await productDB.updateProductData(productId, newData)
   if (!updatedProduct) throw new AppError('No product found', 404)
 
-  await safeAwait(
-    productCache.clearAllCached(updatedProduct.category),
-    'failed to clear cached products',
-  )
-
+  await invalidateProduct(updatedProduct.category, productId)
   return updatedProduct
 }
 
 export const deleteProduct = async (productId) => {
   const deletedProduct = await productDB.deleteProduct(productId)
   if (!deletedProduct) throw new AppError('No product found', 404)
-  if (deletedProduct.imageId) await cloudinaryService.deleteImage(deletedProduct.imageId)
 
-  await safeAwait(
-    productCache.clearAllCached(deletedProduct.category, productId),
-    'failed to clear cached products',
-  )
+  await invalidateProduct(deletedProduct.category, productId)
+
+  if (deletedProduct.imageId)
+    safeAwait(
+      cloudinaryService.deleteImage(deletedProduct.imageId),
+      'failed to cleanup uploaded image',
+    )
 
   return true
 }
